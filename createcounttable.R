@@ -49,9 +49,9 @@ conditionsheet <- matrix(nrow=(length(replicate) * length(conditions) * 2), ncol
 colnames(conditionsheet) <- c("Samples","Data_Type","Conditions")
 
 # read data of signal and create histograms 
-SIGNAL <- matrix(nrow=length(regions), ncol=(length(replicate) * length(conditions)))
-header <- rep("", (length(replicate) * length(conditions)))
-c <- 1
+SIGNAL <- matrix(nrow=length(regions), ncol=(length(replicate) * length(conditions))+1)
+header <- c("Entry", rep("", (length(replicate) * length(conditions))))
+c <- 2
 t <- 1
 for(i in 1:length(conditions)){
   for(j in 1:length(replicate)){
@@ -61,7 +61,7 @@ for(i in 1:length(conditions)){
     header[c] <- smpname
     
     conditionsheet[t,1] <- smpname
-    conditionsheet[t,2] <- type_signal
+    conditionsheet[t,2] <- "Ribo-Seq"
     conditionsheet[t,3] <- conditions[i]
     
     c <- c+1
@@ -73,7 +73,7 @@ for(i in 1:length(conditions)){
   }
 }
 SIGNAL <- as.data.frame(SIGNAL)
-rownames(SIGNAL) <- as.character(regions)
+SIGNAL[,1] <- as.character(regions)
 colnames(SIGNAL) <- header 
 
 # read data of background and create histograms 
@@ -88,7 +88,7 @@ for(i in 1:length(conditions)){
     header[c] <- smpname
     
     conditionsheet[t,1] <- smpname
-    conditionsheet[t,2] <- type_background
+    conditionsheet[t,2] <- "RNA-Seq"
     conditionsheet[t,3] <- conditions[i]
     
     c <- c+1
@@ -100,7 +100,6 @@ for(i in 1:length(conditions)){
   }
 }
 BACKGROUND <- as.data.frame(BACKGROUND)
-rownames(BACKGROUND) <- as.character(regions)
 colnames(BACKGROUND) <- header 
 
 # check if colnames (samples have duplicated names)
@@ -115,9 +114,9 @@ if( ncol(SIGNAL) != length(unique(colnames(SIGNAL))) ) {
 counttable <- cbind(SIGNAL, BACKGROUND)
 
 # create condition vector for riborex 
-contrastconditionsvector <- rep(conditions ,each=length(replicate))
+contrastconditionsvector <- rep(conditions, each=length(replicate))
 
 # write results into file
-write.table(counttable, paste0(outputpath, "/", type_signal , "_", type_background , "_counttable.tsv"), sep="\t",quote = F, col.names=NA)
+write.table(counttable, paste0(outputpath, "/", type_signal , "_", type_background , "_counttable.tsv"), sep="\t", quote = F, row.names=FALSE)
 write.csv(conditionsheet, paste0(outputpath, "/", type_signal , "_", type_background , "_conditionsheet.csv"), quote = F, row.names=FALSE)
 
