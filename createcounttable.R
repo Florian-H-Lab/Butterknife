@@ -42,7 +42,6 @@ if(!dir.exists(coverdir)){
 
 # get regions were htseq was applied to 
 regions <- as.character(read.delim(paste0(datapath, "/", type_signal, "_", conditions[1], "_", replicate[1], ".bam.tabular"), header=FALSE)[,1])
-regions <- gsub("\\.", "", regions)
 
 # create conditon sheet
 conditionsheet <- matrix(nrow=(length(replicate) * length(conditions) * 2), ncol=3)
