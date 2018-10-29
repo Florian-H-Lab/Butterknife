@@ -28,7 +28,7 @@ def write_list_to_file(li, filename):
         file.write(ele + "\n")
     file.close()
 
-control = "IgG"
+control = "Input"
 
 data_path = "/home/flow/Documents/Bruno/"
 
@@ -65,6 +65,4 @@ for ele in ribodiff_diffpval_genes:
   if ele in riborex_diffpval_genes:
       compare_file.write(ele + "\n")
 compare_file.close()
-
-
 
