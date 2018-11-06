@@ -29,17 +29,26 @@ option_list = list(
 option_parser = OptionParser(option_list = option_list);
 options = parse_args(option_parser);
 
-datapath <- options$data_path
-outputpath <- options$output_path
+# datapath <- options$data_path
+# outputpath <- options$output_path
+# 
+# type_signal <- options$signal_name
+# type_background <- options$background_name
+# 
+# # split conditions 
+# conditions <- unlist(strsplit(options$conditions, ","))
+# 
+# # create vector of replicates 
+# replicate <- unlist(lapply(c(1:options$number_of_replicates), function(x){paste0("rep", x)}))
 
-type_signal <- options$signal_name
-type_background <- options$background_name
+datapath <- "~/Documents/Bruno/htseq"
+outputpath <- "~/Documents/Bruno/riborex"
 
-# split conditions 
-conditions <- unlist(strsplit(options$conditions, ","))
+type_signal <- "Med12"
+type_background <- "IgG"
 
-# create vector of replicates 
-replicate <- unlist(lapply(c(1:options$number_of_replicates), function(x){paste0("rep", x)}))
+conditions <- c("Wildtype", "Mutant")
+replicate <- c("rep1", "rep2")
 
 # make output dir 
 coverdir <- paste0(outputpath, "/coverage_plots")
@@ -101,11 +110,21 @@ if( ncol(SIGNAL) != length(unique(colnames(SIGNAL))) ) {
   stop("Duplicated Sample Names in SIGNAL")
 }
 
+
+# filter genes where neither background nor signal have data
+signal_zero_entries <- which(as.numeric(apply(SIGNAL, 1, sum)) == 0)
+background_zero_entries <- which(as.numeric(apply(BACKGROUND, 1, sum)) == 0)
+
+zero_entries <- intersect(signal_zero_entries, background_zero_entries)
+
+BACKGROUND <- BACKGROUND[-zero_entries,]
+SIGNAL <- SIGNAL[-zero_entries,]
+
 # create condition vector for riborex 
 contrastconditionsvector <- rep(conditions ,each=length(replicate))
 
 # run riborex analysis
-results.deseq2 <- riborex(BACKGROUND, SIGNAL, contrastconditionsvector, contrastconditionsvector)
+results.deseq2 <- riborex(BACKGROUND, SIGNAL, contrastconditionsvector, contrastconditionsvector, minMeanCount = 5)
 summary(results.deseq2)
 
 # write results into file
@@ -113,5 +132,54 @@ write.csv(results.deseq2, paste0(outputpath, "/", type_signal , "_", type_backgr
 
 # plot MA
 pdf(paste0(outputpath, "/", type_signal , "_", type_background, "_MA_plot.pdf"))
-plotMA(results.deseq2)
+DESeq2::plotMA(results.deseq2)
 dev.off()
+
+# plot p-value distribution
+pdf(paste0(outputpath, "/", type_signal , "_", type_background, "_pval_plot.pdf"))
+hist(results.deseq2$pvalue, main="", xlab="p-value", breaks=seq(0,1,0.05), xaxt="n")
+axis(side=1, at=seq(0, 1, 0.05), labels=seq(0,1,0.05))
+dev.off()
+
+# plot log2foldchange distribution
+pdf(paste0(outputpath, "/", type_signal , "_", type_background, "_log2fc_plot.pdf"))
+maxfc <- ceiling(max(c(max(results.deseq2$log2FoldChange), abs(min(results.deseq2$log2FoldChange)))))
+hist(results.deseq2$log2FoldChange, main="", xlab="log2FC", breaks=seq(-maxfc,maxfc,1), xaxt="n")
+axis(side=1, at=seq(-maxfc, maxfc, 1), labels=seq(-maxfc, maxfc, 1))
+dev.off()
+
+# plot log2foldchange SE distribution
+pdf(paste0(outputpath, "/", type_signal , "_", type_background, "_log2fcSE_plot.pdf"))
+maxfcSE <- ceiling(max(results.deseq2$lfcSE))
+hist(results.deseq2$lfcSE, main="", xlab="SE of FC", breaks=seq(0,maxfcSE,0.5), xaxt="n")
+axis(side=1, at=seq(0,maxfcSE,0.5), labels=seq(0,maxfcSE,0.5))
+dev.off()
+
+# Get information aboutthe column descriptions
+# print(results.deseq2@elementMetadata@listData[["description"]])
+
+# ### load the data
+# data(riborexdata)
+# ### get rna-seq read count table
+# rna <- riborexdata$rna
+# ### get ribo-seq read count table
+# ribo <- riborexdata$ribo
+# ### prepare rna-seq condtions
+# rnacond <- c("control", "control", "treated", "treated")
+# ### prepare ribo-seq condtions
+# ribocond <- c("control", "control", "treated", "treated")
+# ### run riborex with default engine "DESeq2"
+# res.deseq2 <- riborex(rna, ribo, rnacond, ribocond)
+# 
+# DESeq2::plotMA(res.deseq2)
+# 
+# hist(res.deseq2$pvalue, main="", xlab="p-value", breaks=seq(0,1,0.05), xaxt="n")
+# axis(side=1, at=seq(0, 1, 0.05), labels=seq(0,1,0.05))
+# 
+# maxfc <- ceiling(max(c(max(res.deseq2$log2FoldChange), abs(min(res.deseq2$log2FoldChange)))))
+# hist(res.deseq2$log2FoldChange, main="", xlab="p-value", breaks=seq(-maxfc,maxfc,1), xaxt="n")
+# axis(side=1, at=seq(-maxfc, maxfc, 1), labels=seq(-maxfc, maxfc, 1))
+# 
+# maxfcSE <- ceiling(max(res.deseq2$lfcSE))
+# hist(res.deseq2$lfcSE, main="", xlab="p-value", breaks=seq(0,maxfcSE,0.5), xaxt="n")
+# axis(side=1, at=seq(0,maxfcSE,0.5), labels=seq(0,maxfcSE,0.5))
