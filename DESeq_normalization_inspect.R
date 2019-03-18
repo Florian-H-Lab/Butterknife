@@ -91,9 +91,17 @@ for(i in 1:length(log_geometric_mean)){
 
 # get the median for each sample and take the exponent of it to get the scaling factor 
 medians <- apply(data, 2, median)
-medians <- exp(medians)
+
+for(i in 1:ncol(data)){
+  pdf(paste0(outputpath, "/", colnames(data)[i], "_pseudoSF.pdf"))
+  plot(data[order(data[,i]),i], xlab="Sorted Index", ylab="Log Pseudo-SizeFactors (Entry/Geo-Mean)",main=colnames(data)[i], type="p", pch=".")
+  abline(a=medians[i], b=0, col="red", lwd=3)
+  legend("topleft", legend="Median", col="red", lwd=3)
+  dev.off()
+}
 
 # take the exponent of the data
+medians <- exp(medians)
 data <- exp(data) 
 
 # normalize
@@ -107,11 +115,11 @@ sd_c2 <- apply(data[,(number_of_replicates+1):ncol(data)], 1, sd)
 
 # generating plots
 pdf(paste0(outputpath, "/", type[1] , "_", condition, "_sd.pdf"))
-hist(log10(sd_c1), xlab="Mean Read Count Signal", breaks=100, main="")
+hist(log10(sd_c1), xlab="log Standard Deviation Read Count", breaks=100, main="")
 dev.off()
 
 pdf(paste0(outputpath, "/", type[2] , "_", condition, "_sd.pdf"))
-hist(log10(sd_c2), xlab="Mean Read Count Signal", breaks=100, main="")
+hist(log10(sd_c2), xlab="log Standard Deviation Read Count", breaks=100, main="")
 dev.off()
 
 
